@@ -16,7 +16,7 @@ fn calc_score(letter: &str) -> u32 {
         "Z" => SCISSORS,
         &_ => {
             println!("Unknown: {letter}");
-            process::exit(0)
+            process::exit(1)
         },
     }
 }
