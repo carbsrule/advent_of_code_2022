@@ -24,3 +24,7 @@ pub fn read_line() -> (usize, String) {
     }
     return (num_bytes, line);
 }
+
+pub fn parse_int(num: &str) -> i32 {
+    return num.parse().expect("Failed to parse number");
+}
