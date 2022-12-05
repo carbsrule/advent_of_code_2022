@@ -1,3 +1,4 @@
+use base;
 use std::io;
 use lazy_static::lazy_static;
 use regex::Regex;
@@ -43,7 +44,7 @@ fn load_stacks(stacks: &mut Vec<String>, line: String) -> bool {
     return true;
 }
 
-fn do_move(stacks: &mut Vec<String>, line: String) {
+fn do_move(stacks: &mut Vec<String>, line: String, part: u32) {
     lazy_static! {
         static ref RE: Regex = Regex::new("move ([0-9]+) from ([0-9]+) to ([0-9]+)").unwrap();
     }
@@ -56,14 +57,27 @@ fn do_move(stacks: &mut Vec<String>, line: String) {
         src -= 1;
         dest -= 1;
 
-        for _ in 0..count {
-            let item = stacks[src].pop().unwrap();
-            stacks[dest].push(item);
+        if part == 2 {
+            let mut crane_load = String::new();
+            for _ in 0..count {
+                let item = stacks[src].pop().unwrap();
+                crane_load.push(item);
+            }
+            for _ in 0..count {
+                let item = crane_load.pop().unwrap();
+                stacks[dest].push(item);
+            }
+        } else {
+            for _ in 0..count {
+                let item = stacks[src].pop().unwrap();
+                stacks[dest].push(item);
+            }
         }
     }
 }
 
 fn main() {
+    let part = base::get_part();
     let mut stacks: Vec<String> = vec![];
     let mut reading_stacks = true;
     loop {
@@ -85,7 +99,7 @@ fn main() {
             init_stacks(&mut stacks, &line);
             reading_stacks = load_stacks(&mut stacks, line);
         } else {
-            do_move(&mut stacks, line);
+            do_move(&mut stacks, line, part);
         }
     }
     println!("Final stacks: {:?}", stacks);
