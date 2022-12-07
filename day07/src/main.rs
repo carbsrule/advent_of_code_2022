@@ -104,4 +104,26 @@ fn main() {
         }
     }
     println!("Total size (dirs < {}): {}", size_limit, total_size);    
+
+    let total_disk_space = 70000000;
+    let mut space_used = 0;
+    match status.dirs.get("/") {
+        Some(dir_size) => {
+            space_used = *dir_size;
+        },
+        None => return
+    }
+    println!("Space use: {}/{}", space_used, total_disk_space);
+
+    let required_space = 30000000;
+    let space_to_free = space_used - (total_disk_space - required_space);
+    println!("Space to free: {}", space_to_free);
+
+    let mut min_deletable = space_used;
+    for (_, size) in &status.dirs {
+        if size >= &space_to_free && size < &min_deletable {
+            min_deletable = *size;
+        }
+    }
+    println!("Can free: {}", min_deletable);
 }
