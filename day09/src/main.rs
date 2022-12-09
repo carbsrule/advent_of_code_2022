@@ -15,9 +15,9 @@ impl fmt::Debug for Point {
     }
 }
 
-fn update_tail_positions(tail_pos: &Point, tail_positions: &mut Vec<Point>) {
-    for i in 0..tail_positions.len() {
-        let check_pos = &tail_positions[i];
+fn update_tail_history(tail_pos: &Point, last_tail_history: &mut Vec<Point>) {
+    for i in 0..last_tail_history.len() {
+        let check_pos = &last_tail_history[i];
         if check_pos.x == tail_pos.x && check_pos.y == tail_pos.y {
             return
         }
@@ -28,10 +28,10 @@ fn update_tail_positions(tail_pos: &Point, tail_positions: &mut Vec<Point>) {
         x: tail_pos.x,
         y: tail_pos.y,
     };
-    tail_positions.push(new_pos);
+    last_tail_history.push(new_pos);
 }
 
-fn rope_move(dir: &str, dist: i32, pos: &mut Point, tail_pos: &mut Point, tail_positions: &mut Vec<Point>) {
+fn rope_move(dir: &str, dist: i32, pos: &mut Point, tail_pos: &mut Point, last_tail_history: &mut Vec<Point>) {
     let mut delta = Point{
         x: 0,
         y: 0,
@@ -46,7 +46,7 @@ fn rope_move(dir: &str, dist: i32, pos: &mut Point, tail_pos: &mut Point, tail_p
     if DEBUG_OUTPUT {
         println!("{} {} ->", dir, dist);
     }
-    
+
     for _ in 0..dist {
         pos.x += delta.x;
         pos.y += delta.y;
@@ -81,7 +81,7 @@ fn rope_move(dir: &str, dist: i32, pos: &mut Point, tail_pos: &mut Point, tail_p
         if DEBUG_OUTPUT {
             println!(" {:?} (tail {:?})", (pos.x, pos.y), (tail_pos.x, tail_pos.y));
         }
-        update_tail_positions(&tail_pos, tail_positions);
+        update_tail_history(&tail_pos, last_tail_history);
     }
 }
 
@@ -94,8 +94,8 @@ fn main() {
         x: 0,
         y: 0,
     };
-    let mut tail_positions: Vec<Point> = vec![];
-    update_tail_positions(&tail_pos, &mut tail_positions);
+    let mut last_tail_history: Vec<Point> = vec![];
+    update_tail_history(&tail_pos, &mut last_tail_history);
     loop {
         let (num_bytes, line) = base::read_line();
         if num_bytes == 0 {
@@ -116,7 +116,7 @@ fn main() {
             }
             i += 1;
         }
-        rope_move(dir, dist, &mut pos, &mut tail_pos, &mut tail_positions);
+        rope_move(dir, dist, &mut pos, &mut tail_pos, &mut last_tail_history);
     }
-    println!("Tail positions: {}", tail_positions.len());
+    println!("Tail positions: {}", last_tail_history.len());
 }
