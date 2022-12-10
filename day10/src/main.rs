@@ -1,8 +1,19 @@
 fn update_sum(cycle_num: &mut i32, x: &mut i32, sum: &mut i32) {
     if *cycle_num == 20 || (*cycle_num - 20) % 40 == 0 {
         let signal_strength = *cycle_num * *x;
-        println!("Cycle: {}, X: {}, Signal: {}", cycle_num, x, signal_strength);
         *sum += signal_strength;
+    }
+}
+
+fn draw_pixels(cycle_num: i32, x: i32) {
+    let pixel_pos = (cycle_num - 1) % 40;
+    if pixel_pos == x-1 || pixel_pos == x || pixel_pos == x+1 {
+        print!("#");
+    } else {
+        print!(".");
+    }
+    if pixel_pos == 39 {
+        println!("");
     }
 }
 
@@ -24,9 +35,11 @@ fn main() {
                 } else {
                     cycle_num += 1;
                 }
+                draw_pixels(cycle_num, x);
                 update_sum(&mut cycle_num, &mut x, &mut sum);
                 if part != "noop" {
                     cycle_num += 1;
+                    draw_pixels(cycle_num, x);
                     update_sum(&mut cycle_num, &mut x, &mut sum);
                 }
             } else if part_num == 1 {
