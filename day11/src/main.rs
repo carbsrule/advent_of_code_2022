@@ -1,13 +1,13 @@
 use substring::Substring;
 
 struct Monkey {
-    items: Vec<i32>,
+    items: Vec<i64>,
     operator: String,
-    operand: i32,
-    div_test: i32,
+    operand: i64,
+    div_test: i64,
     true_to: usize,
     false_to: usize,
-    total_inspections: u32,
+    total_inspections: u64,
 }
 
 fn parse_monkey_data(line: &mut String, monkeys: &mut Vec<Monkey>, mut monkey_idx: usize) -> usize {
@@ -25,7 +25,7 @@ fn parse_monkey_data(line: &mut String, monkeys: &mut Vec<Monkey>, mut monkey_id
         return new_idx;
     } else if line.substring(0, 15) == "Starting items:" {
         for item in line.substring(15, line.len()).split(',') {
-            let item = base::parse_int(item.trim());
+            let item = base::parse_int(item.trim()) as i64;
             monkeys[monkey_idx].items.push(item);
         }
     } else if line.substring(0, 10) == "Operation:" {
@@ -33,11 +33,11 @@ fn parse_monkey_data(line: &mut String, monkeys: &mut Vec<Monkey>, mut monkey_id
         monkeys[monkey_idx].operator = parts.nth(3).unwrap().to_string();
         let operand = parts.next().unwrap();
         if operand != "old" {
-            monkeys[monkey_idx].operand = base::parse_int(operand);
+            monkeys[monkey_idx].operand = base::parse_int(operand) as i64;
         }
         
     } else if line.substring(0, 5) == "Test:" {
-        monkeys[monkey_idx].div_test = base::parse_int(line.substring(19, line.len()));
+        monkeys[monkey_idx].div_test = base::parse_int(line.substring(19, line.len())) as i64;
         // Test: divisible by 17
     } else if line.substring(0, 8) == "If true:" {
         let parts = line.substring(11, line.len()).split(' ');
@@ -52,9 +52,9 @@ fn parse_monkey_data(line: &mut String, monkeys: &mut Vec<Monkey>, mut monkey_id
     return monkey_idx;
 }
 
-fn prepare_throws(monkeys: &mut Vec<Monkey>, idx: usize) -> Vec<(usize, i32)> {
+fn prepare_throws(monkeys: &mut Vec<Monkey>, idx: usize, part: u32) -> Vec<(usize, i64)> {
     let monkey = &mut monkeys[idx];
-    let mut throws: Vec<(usize, i32)> = vec![];
+    let mut throws = vec![];
     for i in 0..monkey.items.len() {
         let item = monkey.items[i];
         monkey.total_inspections += 1;
@@ -70,7 +70,9 @@ fn prepare_throws(monkeys: &mut Vec<Monkey>, idx: usize) -> Vec<(usize, i32)> {
             assert!(monkey.operator == "*");
             worry_level *= operand;
         }
-        worry_level /= 3;
+        if part == 1 {
+            worry_level /= 3;
+        }
         let throw_to = if worry_level % monkey.div_test == 0 { monkey.true_to } else { monkey.false_to };
         throws.push((throw_to, worry_level));
     }
@@ -78,6 +80,7 @@ fn prepare_throws(monkeys: &mut Vec<Monkey>, idx: usize) -> Vec<(usize, i32)> {
 }
 
 fn main() {
+    let part = base::get_part();
     let mut monkeys: Vec<Monkey> = vec![];
     let mut monkey_idx: usize = 0;
     loop {
@@ -90,6 +93,8 @@ fn main() {
         monkey_idx = parse_monkey_data(&mut line, &mut monkeys, monkey_idx);
     }
 
+    // Handle large numbers using modulo as product of modulos for all operations
+    let mut mass_divisor = 1;
     for i in 0..monkeys.len() {
         let monkey = &monkeys[i];
         println!(
@@ -97,25 +102,27 @@ fn main() {
             monkey.items, monkey.operator, monkey.operand, monkey.div_test,
             monkey.true_to, monkey.false_to,
         );
+        mass_divisor *= monkey.div_test;
     }
 
-    for round in 1..21 {
+    let rounds = if part == 2 { 10000 } else { 20 };
+    for _round in 1..=rounds {
         for i in 0..monkeys.len() {
-            let throws = prepare_throws(&mut monkeys, i);
+            let throws = prepare_throws(&mut monkeys, i, part);
             for throw in throws {
                 let target = throw.0;
-                let worry_value = throw.1;
+                let worry_value = throw.1 % mass_divisor;
                 monkeys[target].items.push(worry_value);
             }
             monkeys[i].items = vec![];
         }
-        // println!("After round {round}, the monkeys are holding items with these worry levels:");
+        // println!("After round {_round}, the monkeys are holding items with these worry levels:");
         // for i in 0..monkeys.len() {
-        //     println!("Monkey {i}: {:?}", monkeys[i].items);
+        //     println!("Monkey {i}, inspected: {}, items: {:?}", monkeys[i].total_inspections, monkeys[i].items);
         // }
     }
 
-    let mut most_active: [u32; 2] = [0, 0];
+    let mut most_active: [u64; 2] = [0, 0];
     for i in 0..monkeys.len() {
         let monkey_total = monkeys[i].total_inspections;
         println!("Monkey {i}: inspected items {} times", monkey_total);
