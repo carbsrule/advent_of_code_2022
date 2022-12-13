@@ -146,7 +146,7 @@ fn extend_path(map: &Map, path: &Vec<Point>) -> Vec<Vec<Point>> {
     return new_paths;
 }
 
-fn find_path(mut map: Map) -> Vec<Point> {
+fn find_path(map: &mut Map) -> Vec<Point> {
     loop {
         if map.paths.len() == 0 {
             return vec![];
@@ -165,13 +165,46 @@ fn find_path(mut map: Map) -> Vec<Point> {
     }
 }
 
-fn main() {
-    let map = read_map();
-
-    let path = find_path(map);
-    if path.len() == 0 {
-        println!("No path to finish");
-    } else {
-        println!("Path to finish has {} steps", path.len() - 1);
+fn find_alt_start_points(map: &Map) -> Vec<Point> {
+    let mut start_points = vec![];
+    for i in 0..map.grid.len() {
+        for j in 0..map.grid[i].len() {
+            if map.grid[i][j] == 0 {
+                let start_point = Point(i, j);
+                if map.start != start_point {
+                    start_points.push(start_point);
+                }
+            }
+        }
     }
+    return start_points;
+}
+
+fn main() {
+    let mut map = read_map();
+
+    let mut start_points = vec![map.start.clone()];
+    let mut alt_starts = find_alt_start_points(&map);
+    start_points.append(&mut alt_starts);
+
+    let mut shortest_path = 100_000_000;
+    for i in 0..start_points.len() {
+        map.paths = VecDeque::new();
+        map.paths.push_back(vec![start_points[i].clone()]);
+
+        let start = &start_points[i];
+        map.start = start.clone();
+        let path = find_path(&mut map);
+        if path.len() == 0 {
+            println!("No path from {:?} to finish", &start);
+            continue;
+        }
+
+        let path_len = path.len() - 1;
+        println!("Path from {:?} to finish has {} steps", &start, path_len);
+        if path_len - 1 < shortest_path {
+            shortest_path = path_len;
+        }
+    }
+    println!("Shortest path: {shortest_path}");
 }
