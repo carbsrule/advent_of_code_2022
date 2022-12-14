@@ -1,5 +1,7 @@
 use std::fmt;
 
+const DEBUG_OUTPUT: bool = false;
+
 struct Item {
     is_list: bool,
     number: i32,
@@ -119,7 +121,9 @@ fn pad_spaces(depth: u8) -> String {
 
 fn compare_numbers(item_a: &Item, item_b: &Item, depth: u8) -> i8 {
     let spaces = pad_spaces(depth);
-    println!("{}- Compare {:?} vs {:?}", spaces, item_a.number, item_b.number);
+    if DEBUG_OUTPUT {
+        println!("{}- Compare {:?} vs {:?}", spaces, item_a.number, item_b.number);
+    }
     if item_a.number < item_b.number {
         return -1;
     } else if item_a.number == item_b.number {
@@ -130,12 +134,16 @@ fn compare_numbers(item_a: &Item, item_b: &Item, depth: u8) -> i8 {
 
 fn compare_lists(a: &List, b: &List, depth: u8) -> i8 {
     let spaces = pad_spaces(depth);
-    println!("{}- Compare {:?} vs {:?}", spaces, a, b);
+    if DEBUG_OUTPUT {
+        println!("{}- Compare {:?} vs {:?}", spaces, a, b);
+    }
     for i in 0..a.items.len() {
         // b has ran out of items
         if i >= b.items.len() {
-            println!("{}- out of RHS items", spaces);
-            println!("{}- LHS at {}: {:?}", spaces, i, a.items[i]);
+            if DEBUG_OUTPUT {
+                println!("{}- out of RHS items", spaces);
+                println!("{}- LHS at {}: {:?}", spaces, i, a.items[i]);
+            }
             return 1;
         }
 
@@ -160,7 +168,9 @@ fn compare_lists(a: &List, b: &List, depth: u8) -> i8 {
             }
         }
         if res != 0 {
-            println!("{}- Comparison finished with: {}", spaces, res);
+            if DEBUG_OUTPUT {
+                println!("{}- Comparison finished with: {}", spaces, res);
+            }
             return res;
         }
     }
@@ -170,12 +180,47 @@ fn compare_lists(a: &List, b: &List, depth: u8) -> i8 {
     return 0;
 }
 
+fn to_char_vec(str: &String) -> Vec<char> {
+    let mut chars: Vec<char> = vec![];
+    for char in str.chars() {
+        chars.push(char);
+    }
+    return chars;
+}
+
+fn sort(list: &mut Vec<List>) {
+    loop {
+        let mut sorted = false;
+        for i in 0..list.len() - 1 {
+            let res = compare_lists(&list[i], &list[i+1], 0);
+            if res != 1 {
+                continue;
+            }
+            sorted = true;
+            list.swap(i, i+1);
+        }
+        if !sorted {
+            break;
+        }
+    }
+}
+
 fn main() {
     let mut side = 'L';
-    let mut left = List::new();
-    let mut right;
+    let mut list: List;
+    let mut left_idx: usize = 0;
+    let mut right_idx: usize;
     let mut sum_correct_indices = 0;
     let mut pair_num = 0;
+
+    let mut all_entries: Vec<List> = vec![];
+    let div1 = "[[2]]".to_string();
+    let div2 = "[[6]]".to_string();
+    let mut divider_packet = to_char_vec(&div1);
+    all_entries.push(read_list(&divider_packet, &mut 0));
+    divider_packet = to_char_vec(&div2);
+    all_entries.push(read_list(&divider_packet, &mut 0));
+    
     loop {
         let (num_bytes, line) = base::read_line();
         if num_bytes == 0  {
@@ -187,10 +232,7 @@ fn main() {
         }
 
         // read left or right line (alternating)
-        let mut chars: Vec<char> = vec![];
-        for char in line.chars() {
-            chars.push(char);
-        }
+        let chars = to_char_vec(&line);
 
         // Ignore comments
         if chars[0] == '#' {
@@ -198,24 +240,28 @@ fn main() {
         }
 
         let mut char_pos: usize = 0;
+        list = read_list(&chars, &mut char_pos);
+        all_entries.push(list);
         if side == 'L' {
-            left = read_list(&chars, &mut char_pos);
+            left_idx = all_entries.len() - 1;
             side = 'R';
         } else {
-            right = read_list(&chars, &mut char_pos);
+            right_idx = all_entries.len() - 1;
             side = 'L';
 
             // do comparison
+            let left = &all_entries[left_idx];
+            let right = &all_entries[right_idx];
             pair_num += 1;
-            let comp_result = compare_lists(&left, &right, 0);
+            let comp_result = compare_lists(left, right, 0);
 
             let comp_info = if comp_result == 1 {
                 "out of order"
             } else {
                 "in order"
             };
-            println!("{:?} vs {:?}: {}", left, right, comp_info);
-            println!("");
+            // println!("{:?} vs {:?}: {}", left, right, comp_info);
+            // println!("");
 
             if comp_result != 1 {
                 sum_correct_indices += pair_num;
@@ -223,4 +269,18 @@ fn main() {
         }
     }
     println!("Total in correct order: {}", sum_correct_indices);
+
+    sort(&mut all_entries);
+
+    let mut decoder = 0;
+    for i in 0..all_entries.len() {
+        let list_repr = format!("{:?}", all_entries[i]);
+        println!("Sorted entry {}: {}", i, list_repr);
+        if list_repr == div1 {
+            decoder = i + 1;
+        } else if list_repr == div2 {
+            decoder *= i + 1;
+        }
+    }
+    println!("Decoder key: {}", decoder);
 }
